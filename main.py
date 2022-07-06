@@ -126,7 +126,7 @@ def add_queue(member: Member, server_id):
         if queue.timeout_start is not None:
             queue.timeout_start = None
             session.commit()
-            logger.info(f"{member.ref} was removed from queue timeout.")
+            logger.info(f"{member.ref} was removed from queue timeout and added back into the queue.")
     else:
         queue = Queue(join_time=datetime.now(), member_id=member.id, server_id=server_id)
         session.add(queue)
