@@ -218,7 +218,7 @@ async def check_voicechannel(server):
             if queued_user.member_id in members:
                 update_member(bot.get_user(queued_user.member_id), server)
                 add_queue(queued_user.member_id, server.id)
-                members.remove(bot.get_user(queued_user.member_id))
+                members.remove(queued_user.member_id)
             # Members who were in queue but now are not
             elif queued_user.member_id not in members and queued_user.timeout_start is None:
                 remove_queue(queued_user.member_id, server.id)
