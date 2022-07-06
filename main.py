@@ -144,6 +144,7 @@ def remove_queue(member: Member, server_id):
         member = session.query(Member).filter_by(id=member.id).first()
     server = session.query(Server).filter_by(id=server_id).first()
     # User must be in queue for more than 5 minutes to allow a timeout countdown.
+    logger.info(queue)
     if check_time_difference(queue.join_time).seconds > server.timeout_wait:
         time_diff = check_time_difference(queue.join_time) - timedelta(seconds=server.timeout_duration)
         logger.info(f"Time diff: {time_diff}")
@@ -195,16 +196,15 @@ def update_member(member: discord.member, server: Server):
 
 # Updates the queue message
 async def update_message(server_id, queue_channel):
-    channel_history = await queue_channel.history(limit=1).flatten()
+    channel_history = await queue_channel.history(limit=50).flatten()
     if len(channel_history) > 0:
         last_msg = channel_history[0]
     else:
         last_msg = None
+    logger.info(last_msg, own_messages(last_msg))
     if own_messages(last_msg):
-        logger.info("Editing last message")
         await last_msg.edit(content=compile_queue(server_id))
     else:
-        logger.info("Removing messages and printing a new one")
         await queue_channel.purge(limit=100, check=own_messages)
         await queue_channel.send(compile_queue(server_id))
 
