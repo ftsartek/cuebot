@@ -76,14 +76,14 @@ class Config:
             self.refresh = self.fallbackdata.get("refresh")
 
         if self.data.get("superuser_id") is not None:
-            self.bot_key = self.data.get("superuser_id")
+            self.superuser_id = self.data.get("superuser_id")
         else:
-            self.bot_key = self.fallbackdata.get("superuser_id")
+            self.superuser_id = self.fallbackdata.get("superuser_id")
 
         if self.data.get("superuser_ref") is not None:
-            self.bot_key = self.data.get("superuser_ref")
+            self.superuser_ref = self.data.get("superuser_ref")
         else:
-            self.bot_key = self.fallbackdata.get("superuser_ref")
+            self.superuser_ref = self.fallbackdata.get("superuser_ref")
 
     def get_token(self):
         return self.bot_key
