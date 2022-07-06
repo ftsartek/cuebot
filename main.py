@@ -203,14 +203,14 @@ async def check_voicechannel(server):
         members = [bot.get_user(key) for key in voice_queue.voice_states]
         for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
             if queued_user.member_id in [member.id for member in members]:
-                update_member(queued_user.member_id, server)
+                update_member(bot.get_user(queued_user.member_id), server)
                 add_queue(queued_user.member_id, server.id)
                 members.remove(queued_user.member_id)
             elif queued_user.member_id not in members and queued_user.timeout_start is None:
                 remove_queue(queued_user.member_id, server.id)
                 members.remove(queued_user.member_id)
         for member in members:
-            update_member(member.id, server)
+            update_member(member, server)
             add_queue(member.id, server.id)
         await update_message(server.id, queue_channel)
 
