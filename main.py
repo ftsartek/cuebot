@@ -225,7 +225,6 @@ async def check_voicechannel(server):
             # Members who were in queue but now are not
             elif queued_user.member_id not in members:
                 remove_queue(queued_user.member_id, server.id)
-                members.remove(queued_user.member_id)
         # Members who were not previously in queue but have joined
         for member in members:
             update_member(bot.get_user(member), server)
