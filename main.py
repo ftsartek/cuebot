@@ -163,8 +163,6 @@ def remove_queue(member: Member, server_id):
             session.delete(queue)
             session.commit()
             logger.warn(f"{member.ref} was removed from the queue with invalid timeout duration or wait duration.")
-        else:
-            logger.warn(f"{timeout_diff.total_seconds()} | {queue_duration.days}")
     # The user is not on timeout
     else:
         # User must be in queue for more than 5 minutes to allow a timeout countdown
@@ -330,7 +328,7 @@ async def reset_queue_info(ctx):
     if validate_user(author, server) and ctx.message.channel.id == server.admin_channel:
         for item in related:
             item.queue_count = 0
-            item.queue_time = 0
+            item.queue_time = timedelta(seconds=0)
             session.commit()
         logger.warn(f"{ctx.author.id} reset all queue details for {server.id}")
         await ctx.send("All user queue details reset.")
