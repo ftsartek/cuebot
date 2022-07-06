@@ -162,6 +162,8 @@ def remove_queue(member: Member, server_id):
             session.delete(queue)
             session.commit()
             logger.warn(f"{member.ref} was removed from the queue with invalid timeout duration or wait duration.")
+        else:
+            logger.warn(f"{timeout_diff.total_seconds()} | {queue_duration.days}")
     # The user is not on timeout
     else:
         # User must be in queue for more than 5 minutes to allow a timeout countdown
