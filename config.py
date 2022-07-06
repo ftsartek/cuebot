@@ -70,10 +70,10 @@ class Config:
         else:
             self.bot_key = self.fallbackdata.get("token")
 
-        if int(self.data.get("refresh")) is not None:
-            self.refresh = int(self.data.get("refresh"))
+        if self.data.get("refresh") is not None:
+            self.refresh = self.data.get("refresh")
         else:
-            self.refresh = int(self.fallbackdata.get("refresh"))
+            self.refresh = self.fallbackdata.get("refresh")
 
         if self.data.get("superuser_id") is not None:
             self.bot_key = self.data.get("superuser_id")
