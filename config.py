@@ -12,6 +12,7 @@ console_handler.level = logging.INFO
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
+
 class Config:
     __instance = None
 
@@ -27,7 +28,8 @@ class Config:
             logger.warning("Using existing configuration instance.")
         else:
             logger.info("Generating config instance.")
-            self.bot_key, self.refresh, self.superuser_id, self.superuser_ref = None, None, None, None
+            self.bot_key, self.refresh, self.superuser_id, self.superuser_ref, self.sre_us_start, self.sre_us_end, \
+                self.sre_eu_start, self.sre_eu_end = None, None, None, None, None, None, None, None
             Config.__instance = self
             self.set_fallbackdata()
             self.load_config()
@@ -46,7 +48,9 @@ class Config:
 
     def dump_config(self):
         config_dict = {"token": self.bot_key, "refresh": self.refresh,
-                       "superuser_id": self.superuser_id, "superuser_ref": self.superuser_ref}
+                       "superuser_id": self.superuser_id, "superuser_ref": self.superuser_ref,
+                       "sre_us_start": self.sre_us_start, "sre_us_end": self.sre_us_end,
+                       "sre_eu_start": self.sre_eu_start, "sre_eu_end": self.sre_eu_end}
         return json.dumps(config_dict, indent=2)
 
     def write_config(self):
@@ -62,7 +66,11 @@ class Config:
         self.fallbackdata = {"token": None,
                              "refresh": 15,
                              "superuser_id": None,
-                             "superuser_ref": None}
+                             "superuser_ref": None,
+                             "sre_us_start": {"utc_hour": 1, "utc_minute": 0},
+                             "sre_us_end": {"utc_hour": 7, "utc_minute": 0},
+                             "sre_eu_start": {"utc_hour": 16, "utc_minute": 0},
+                             "sre_eu_end": {"utc_hour": 22, "utc_minute": 0}}
 
     def parse_config(self):
         if self.data.get("token") is not None:
@@ -85,6 +93,26 @@ class Config:
         else:
             self.superuser_ref = self.fallbackdata.get("superuser_ref")
 
+        if self.data.get("sre_us_start") is not None:
+            self.sre_us_start = self.data.get("sre_us_start")
+        else:
+            self.sre_us_start = self.fallbackdata.get("sre_us_start")
+
+        if self.data.get("sre_us_end") is not None:
+            self.sre_us_end = self.data.get("sre_us_end")
+        else:
+            self.sre_us_end = self.fallbackdata.get("sre_us_end")
+
+        if self.data.get("sre_eu_start") is not None:
+            self.sre_eu_start = self.data.get("sre_eu_start")
+        else:
+            self.sre_eu_start = self.fallbackdata.get("sre_eu_start")
+
+        if self.data.get("sre_eu_end") is not None:
+            self.sre_eu_end = self.data.get("sre_eu_end")
+        else:
+            self.sre_eu_end = self.fallbackdata.get("sre_eu_end")
+
     def get_token(self):
         return self.bot_key
 
@@ -96,3 +124,15 @@ class Config:
 
     def get_superuser_ref(self):
         return self.superuser_ref
+
+    def get_sre_us_start(self):
+        return self.sre_us_start
+
+    def get_sre_us_end(self):
+        return self.sre_us_end
+
+    def get_sre_eu_start(self):
+        return self.sre_eu_start
+
+    def get_sre_eu_end(self):
+        return self.sre_eu_end
