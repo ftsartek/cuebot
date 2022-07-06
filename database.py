@@ -82,7 +82,7 @@ class PlayerScores(Base):
     points = Column(Integer, nullable=False)
 
 
-if not exists("temp.db") and cfg.get_superuser_id() is not None and cfg.get_superuser_ref() is not None:
+if not exists("records.db") and cfg.get_superuser_id() is not None and cfg.get_superuser_ref() is not None:
     Base.metadata.create_all(engine)
     superuser = Member(id=cfg.get_superuser_id(), ref=cfg.get_superuser_ref(), superuser=True)
     session.add(superuser)
