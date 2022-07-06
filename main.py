@@ -137,7 +137,6 @@ def add_queue(member: Member, server_id):
 
 # Removes a queue item
 def remove_queue(member: Member, server_id):
-
     if isinstance(member, int):
         queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
         member = session.query(Member).filter_by(id=member).first()
@@ -207,7 +206,7 @@ async def check_voicechannel(server):
                 update_member(queued_user.member_id, server)
                 add_queue(queued_user.member_id, server.id)
                 members.remove(queued_user.member_id)
-            elif queued_user.member_id not in members:
+            elif queued_user.member_id not in members and queued_user.timeout_start is None:
                 remove_queue(queued_user.member_id, server.id)
                 members.remove(queued_user.member_id)
         for member in members:
