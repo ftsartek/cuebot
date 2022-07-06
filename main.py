@@ -215,7 +215,7 @@ async def check_voicechannel(server):
         members = [key for key in voice_queue.voice_states]
         for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
             # Members who were previously in queue and still are
-            if queued_user.member_id in [member.id for member in members]:
+            if queued_user.member_id in members:
                 update_member(bot.get_user(queued_user.member_id), server)
                 add_queue(queued_user.member_id, server.id)
                 members.remove(bot.get_user(queued_user.member_id))
