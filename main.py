@@ -388,19 +388,8 @@ async def on_voice_state_update(member, before, after):
     server_id = before.channel.guild.id if before.channel is not None else after.channel.guild.id
     server = session.query(Server).filter_by(id=server_id).first()
     if server is not None:
-        queue_channel = bot.get_channel(server.text_channel)
-        # Update member + nickname
-        update_member(member, server)
-        # Someone leaves the channel
-        if before.channel is not None and before.channel.id == session.query(Server).filter_by(id=before.channel.guild.id).first().voice_channel:
-            if after.channel is None or after.channel.id != session.query(Server).filter_by(id=after.channel.guild.id).first().voice_channel:
-                remove_queue(member, server_id)
-                await update_message(server_id, queue_channel)
-        # Someone joins the channel
-        elif after.channel is not None:
-            if after.channel.id == session.query(Server).filter_by(id=after.channel.guild.id).first().voice_channel:
-                add_queue(member, server_id)
-                await update_message(server_id, queue_channel)
+        await check_voicechannel(server)
+
 
 if cfg.get_token() is not None:
     bot.run(cfg.get_token())
