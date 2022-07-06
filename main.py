@@ -143,6 +143,7 @@ def remove_queue(member: Member, server_id):
         queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
         member = session.query(Member).filter_by(id=member.id).first()
     server = session.query(Server).filter_by(id=server_id).first()
+    logger.info(f"Checking removal for {member.ref}")
     # If the user is already on timeout
     if queue.timeout_start is not None:
         timeout_diff = check_time_difference(queue.timeout_start)
