@@ -150,16 +150,23 @@ def remove_queue(member: Member, server_id):
             queue.timeout_start = datetime.now()
             session.commit()
             logger.info(f"{member.ref} was added to queue timeout.")
-        elif time_diff.days >= 0:
-            logger.info(f"Incrementing {member.ref}'s queue count and time.")
-            related = session.query(Related).filter_by(member_id=member.id, server_id=server_id).first()
-            related.queue_count = related.queue_count + 1
-            related.queue_time = related.queue_time + time_diff
-            session.delete(queue)
-            session.commit()
-            queue_time = convert_seconds(time_diff)
-            logger.info(f"{member.ref} was removed from the queue after {queue_time[0]}d "
-                        f"{queue_time[1]}h {queue_time[2]}m {queue_time[3]}s, with their records iterated.")
+        else:
+            if time_diff.days >= 0:
+                logger.info(f"Incrementing {member.ref}'s queue count and time.")
+                related = session.query(Related).filter_by(member_id=member.id, server_id=server_id).first()
+                related.queue_count = related.queue_count + 1
+                related.queue_time = related.queue_time + time_diff
+                session.delete(queue)
+                session.commit()
+                queue_time = convert_seconds(time_diff)
+                logger.info(f"{member.ref} was removed from the queue after {queue_time[0]}d "
+                            f"{queue_time[1]}h {queue_time[2]}m {queue_time[3]}s, with their records iterated.")
+            else:
+                session.delete(queue)
+                session.commit()
+                queue_time = convert_seconds(check_time_difference(queue.join_time))
+                logger.info(f"{member.ref} was removed from the queue after "
+                            f"{queue_time[0]}d {queue_time[1]}h {queue_time[2]}m {queue_time[3]}s.")
     else:
         session.delete(queue)
         session.commit()
@@ -193,8 +200,10 @@ async def update_message(server_id, queue_channel):
     else:
         last_msg = None
     if own_messages(last_msg):
+        logger.info("Editing last message")
         await last_msg.edit(content=compile_queue(server_id))
     else:
+        logger.info("Removing messages and printing a new one")
         await queue_channel.purge(limit=100, check=own_messages)
         await queue_channel.send(compile_queue(server_id))
 
