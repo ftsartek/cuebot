@@ -159,6 +159,7 @@ def remove_queue(member: Member, server_id):
             related = session.query(Related).filter_by(member_id=member.id, server_id=server_id).first()
             time_diff = check_time_difference(queue.join_time) - timedelta(seconds=server.timeout_duration)
             if time_diff.days >= 0:
+                logger.info(f"Incrementing {member.ref}'s queue count and time.")
                 related.queue_count = related.queue_count + 1
                 related.queue_time = related.queue_time + time_diff
                 session.commit()
