@@ -146,6 +146,7 @@ def remove_queue(member: Member, server_id):
     # User must be in queue for more than 5 minutes to allow a timeout countdown.
     if check_time_difference(queue.join_time).seconds > server.timeout_wait:
         time_diff = check_time_difference(queue.join_time) - timedelta(seconds=server.timeout_duration)
+        logger.info(f"Time diff: {time_diff}")
         if queue.timeout_start is None:
             queue.timeout_start = datetime.now()
             session.commit()
