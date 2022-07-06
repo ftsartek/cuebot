@@ -201,7 +201,6 @@ async def update_message(server_id, queue_channel):
         last_msg = channel_history[0]
     else:
         last_msg = None
-    logger.info(last_msg, own_messages(last_msg))
     if own_messages(last_msg):
         await last_msg.edit(content=compile_queue(server_id))
     else:
@@ -212,10 +211,8 @@ async def update_message(server_id, queue_channel):
 async def check_voicechannel(server):
     if validate_server(server):
         queue_channel = bot.get_channel(server.text_channel)
-        await queue_channel.purge(limit=100, check=own_messages)
         voice_queue = bot.get_channel(server.voice_channel)
         members = [bot.get_user(key) for key in voice_queue.voice_states]
-        print(members)
         for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
             # Members who were previously in queue and still are
             if queued_user.member_id in [member.id for member in members]:
