@@ -212,7 +212,7 @@ async def check_voicechannel(server):
     if validate_server(server):
         queue_channel = bot.get_channel(server.text_channel)
         voice_queue = bot.get_channel(server.voice_channel)
-        members = [bot.get_user(key) for key in voice_queue.voice_states]
+        members = [key for key in voice_queue.voice_states]
         for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
             # Members who were previously in queue and still are
             if queued_user.member_id in [member.id for member in members]:
@@ -222,11 +222,11 @@ async def check_voicechannel(server):
             # Members who were in queue but now are not
             elif queued_user.member_id not in members and queued_user.timeout_start is None:
                 remove_queue(queued_user.member_id, server.id)
-                members.remove(bot.get_user(queued_user.member_id))
+                members.remove(queued_user.member_id)
         # Members who were not previously in queue but have joined
         for member in members:
-            update_member(member, server)
-            add_queue(member.id, server.id)
+            update_member(bot.get_user(member), server)
+            add_queue(member, server.id)
         await update_message(server.id, queue_channel)
 
 
