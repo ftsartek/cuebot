@@ -138,7 +138,10 @@ def add_queue(member: Member, server_id):
 # Removes a queue item
 def remove_queue(member: Member, server_id):
     queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
-    member = session.query(Member).filter_by(id=member.id).first()
+    if isinstance(member, int):
+        member = session.query(Member).filter_by(id=member).first()
+    else:
+        member = session.query(Member).filter_by(id=member.id).first()
     server = session.query(Server).filter_by(id=server_id).first()
     # User must be in queue for more than 5 minutes to allow a timeout countdown.
     if check_time_difference(queue.join_time).seconds > server.timeout_wait:
