@@ -55,10 +55,17 @@ def validate_server(server: Server):
 
 # Validates that a user is allowed to configure a server
 def validate_user(user: Member, server: Server):
+    user = session.query(Member).filter_by(id=user.id).first()
+    server = session.query(Server).filter_by(id=server.id).first()
+    related = session.query(Related).filter_by(server_id=server.id).all()
+    permitted = []
+    for item in related:
+        if item.admin:
+            permitted.append(item.member_id)
     if user.superuser:
         return True
     else:
-        if user.id in server.related:
+        if user.id in permitted:
             return True
     return False
 
@@ -117,9 +124,10 @@ def add_queue(member: Member, server_id):
     queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
     member = session.query(Member).filter_by(id=member.id).first()
     if queue is not None:
-        queue.timeout_start = None
-        session.commit()
-        logger.info(f"{member.ref} was removed from queue timeout.")
+        if queue.timeout_start is not None:
+            queue.timeout_start = None
+            session.commit()
+            logger.info(f"{member.ref} was removed from queue timeout.")
     else:
         queue = Queue(join_time=datetime.now(), member_id=member.id, server_id=server_id)
         session.add(queue)
@@ -143,8 +151,9 @@ def remove_queue(member: Member, server_id):
             related = session.query(Related).filter_by(member_id=member.id, server_id=server_id).first()
             time_diff = check_time_difference(queue.join_time) - timedelta(seconds=server.timeout_duration)
             if time_diff.days >= 0:
-                related.queue_count += 1
-                related.queue_time += time_diff
+                related.queue_count = related.queue_count + 1
+                related.queue_time = related.queue_time + time_diff
+                session.commit()
         session.delete(queue)
         session.commit()
         queue_time = convert_seconds(check_time_difference(queue.join_time))
@@ -188,11 +197,18 @@ async def check_voicechannel(server):
         await queue_channel.purge(limit=100, check=own_messages)
         voice_queue = bot.get_channel(server.voice_channel)
         members = [bot.get_user(key) for key in voice_queue.voice_states]
-        if len(members) > 0:
-            for member in members:
-                update_member(member, server)
-                add_queue(member, server.id)
-            await update_message(server.id, queue_channel)
+        for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
+            if queued_user.member_id in [member.id for member in members]:
+                update_member(queued_user.member_id, server)
+                add_queue(queued_user.member_id, server.id)
+                members.remove(queued_user.member_id)
+            elif queued_user.member_id not in members:
+                remove_queue(queued_user.member_id, server.id)
+                members.remove(queued_user.member_id)
+        for member in members:
+            update_member(member.id, server)
+            add_queue(member.id, server.id)
+        await update_message(server.id, queue_channel)
 
 
 # Command to initialise a server
@@ -295,6 +311,7 @@ async def reset_queue_info(ctx):
             item.queue_count = 0
             item.queue_time = 0
             session.commit()
+        logger.warn(f"{ctx.author.id} reset all queue details for {server.id}")
         await ctx.send("All user queue details reset.")
 
 
@@ -306,6 +323,8 @@ async def add_admin(ctx, name=None):
             if relation is not None:
                 relation.admin = True
                 session.commit()
+                logger.warn(f"{ctx.author.id} added {name[2:-1]} as admin for server {ctx.guild.id}")
+                await ctx.send(f"Added {name[2:-1]} as admin for server {ctx.guild.id}")
 
 
 @bot.command()
@@ -317,6 +336,8 @@ async def set_timeout_wait(ctx, duration=None):
                 if server is not None:
                     server.timeout_wait = int(duration)
                     session.commit()
+                    logger.info(f"{ctx.author.id} set timeout wait time set to {duration}s")
+                    await ctx.send(f"Timeout wait time set to {duration}s")
         except Exception:
             pass
 
@@ -330,6 +351,8 @@ async def set_timeout_duration(ctx, duration=None):
                 if server is not None:
                     server.timeout_duration = int(duration)
                     session.commit()
+                    logger.info(f"{ctx.author.id} set timeout duration time set to {duration}s")
+                    await ctx.send(f"Timeout duration set to {duration}s")
         except Exception:
             pass
 
@@ -337,10 +360,10 @@ async def set_timeout_duration(ctx, duration=None):
 # Event on startup, indicating the bot is ready
 @bot.event
 async def on_ready():
-    session.query(Queue).delete()
     session.commit()
     for server in session.query(Server).all():
         await check_voicechannel(server)
+        logger.info(f"Cuebot ready in {server.id}")
     bot.add_cog(UpdateCog(bot))
 
 
