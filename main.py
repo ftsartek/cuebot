@@ -121,8 +121,12 @@ def stringify_queue(queue_item: Queue, timeout: bool):
 
 # Adds a queue item, or resets it if it was timing out
 def add_queue(member: Member, server_id):
-    queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
-    member = session.query(Member).filter_by(id=member.id).first()
+    if isinstance(member, int):
+        queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
+        member = session.query(Member).filter_by(id=member).first()
+    else:
+        queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
+        member = session.query(Member).filter_by(id=member.id).first()
     if queue is not None:
         if queue.timeout_start is not None:
             queue.timeout_start = None
