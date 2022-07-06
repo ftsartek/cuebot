@@ -30,12 +30,7 @@ class UpdateCog(commands.Cog):
     async def updater(self):
         for server in session.query(Server).all():
             if validate_server(server):
-                queue_channel = bot.get_channel(server.text_channel)
-                for queue_item in session.query(Queue).filter_by(server_id=server.id).all():
-                    if queue_item.timeout_start is not None and queue_item.timeout_start + timedelta(minutes=5) < datetime.now():
-                        session.delete(queue_item)
-                        session.commit()
-                await update_message(server.id, queue_channel)
+                await check_voicechannel(server)
 
 
 # Returns if a message is owned by the bot
