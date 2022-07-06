@@ -162,7 +162,7 @@ def remove_queue(member: Member, server_id):
         elif timeout_diff.total_seconds() < 0 or queue_duration.days < 0:
             session.delete(queue)
             session.commit()
-            logger.warn(f"{member.ref} was removed from the queue with invalid timeout duration or wait duration.")
+            logger.warning(f"{member.ref} was removed from the queue with invalid timeout duration or wait duration.")
     # The user is not on timeout
     else:
         # User must be in queue for more than 5 minutes to allow a timeout countdown
@@ -330,7 +330,7 @@ async def reset_queue_info(ctx):
             item.queue_count = 0
             item.queue_time = timedelta(seconds=0)
             session.commit()
-        logger.warn(f"{ctx.author.id} reset all queue details for {server.id}")
+        logger.warning(f"{ctx.author.id} reset all queue details for {server.id}")
         await ctx.send("All user queue details reset.")
 
 
@@ -342,7 +342,7 @@ async def add_admin(ctx, name=None):
             if relation is not None:
                 relation.admin = True
                 session.commit()
-                logger.warn(f"{ctx.author.id} added {name[2:-1]} as admin for server {ctx.guild.id}")
+                logger.warning(f"{ctx.author.id} added {name[2:-1]} as admin for server {ctx.guild.id}")
                 await ctx.send(f"Added {name[2:-1]} as admin for server {ctx.guild.id}")
 
 
