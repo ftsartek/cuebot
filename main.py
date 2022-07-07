@@ -186,7 +186,7 @@ def add_queue(member: Member, server_id):
 
 
 # Removes a queue item
-def remove_queue(member: Member, server_id):
+def remove_queue(member: Member, server_id, timeout=True):
     if isinstance(member, int):
         queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
         member = session.query(Member).filter_by(id=member).first()
@@ -199,7 +199,7 @@ def remove_queue(member: Member, server_id):
         timeout_diff = check_time_difference(queue.timeout_start)
         queue_duration = check_time_difference(queue.join_time) - timedelta(seconds=server.timeout_wait)
         # Handle valid timeouts, users will be removed from queue and have their data iterated
-        if timeout_diff.total_seconds() > server.timeout_duration and queue_duration.days >= 0:
+        if (timeout_diff.total_seconds() > server.timeout_duration and queue_duration.days >= 0) or timeout is False:
             related = session.query(Related).filter_by(member_id=member.id, server_id=server_id).first()
             related.queue_count = related.queue_count + 1
             related.queue_time = related.queue_time + queue_duration
@@ -217,9 +217,19 @@ def remove_queue(member: Member, server_id):
     else:
         # User must be in queue for more than 5 minutes to allow a timeout countdown
         if check_time_difference(queue.join_time).seconds > server.timeout_wait:
-            queue.timeout_start = datetime.now()
-            session.commit()
-            logger.info(f"{member.ref} was added to queue timeout.")
+            if timeout:
+                queue.timeout_start = datetime.now()
+                session.commit()
+                logger.info(f"{member.ref} was added to queue timeout.")
+            else:
+                related = session.query(Related).filter_by(member_id=member.id, server_id=server_id).first()
+                related.queue_count = related.queue_count + 1
+                related.queue_time = related.queue_time + check_time_difference(queue.join_time)
+                session.delete(queue)
+                session.commit()
+                queue_time = convert_seconds(check_time_difference(queue.join_time))
+                logger.info(f"{member.ref} was removed from the queue after {queue_time[0]}d "
+                            f"{queue_time[1]}h {queue_time[2]}m {queue_time[3]}s, with their records iterated.")
         else:
             session.delete(queue)
             session.commit()
