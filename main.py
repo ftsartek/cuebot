@@ -277,21 +277,25 @@ async def check_voicechannel(server):
         voice_queue = bot.get_channel(server.voice_channel)
         members = [key for key in voice_queue.voice_states]
         message = queue_active_status()
-        for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
-            # Members who were previously in queue and still are
-            if queued_user.member_id in members:
-                update_member(bot.get_user(queued_user.member_id), server)
-                if message[0]:
+        # If we're tracking users...
+        if message[0]:
+            for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
+                # Members who were previously in queue and still are
+                if queued_user.member_id in members:
+                    update_member(bot.get_user(queued_user.member_id), server)
                     add_queue(queued_user.member_id, server.id)
-                members.remove(queued_user.member_id)
-            # Members who were in queue but now are not
-            elif queued_user.member_id not in members:
-                remove_queue(queued_user.member_id, server.id)
-        # Members who were not previously in queue but have joined
-        for member in members:
-            update_member(bot.get_user(member), server)
-            if message[0]:
-                add_queue(member, server.id)
+                    members.remove(queued_user.member_id)
+                # Members who were in queue but now are not
+                elif queued_user.member_id not in members:
+                    remove_queue(queued_user.member_id, server.id)
+            # Members who were not previously in queue but have joined
+            for member in members:
+                update_member(bot.get_user(member), server)
+                if message[0]:
+                    add_queue(member, server.id)
+        else:
+            for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
+                remove_queue(queued_user.member_id, server.id, timeout=False)
         await update_message(server.id, queue_channel, message)
 
 
