@@ -230,6 +230,8 @@ def remove_queue(member: Member, server_id):
 
 # Updates a member and their nickname for a certain server
 def update_member(member: discord.member, server: Server):
+    guild = bot.get_guild(server.id)
+    member = guild.get_member(member.id)
     if session.query(Member).filter_by(id=member.id).first() is None:
         new_member = Member(id=member.id, ref=member.name + '#' + member.discriminator)
         # nick = Nickname(nick=member.display_name, member_id=new_member.id, server_id=1)
@@ -237,14 +239,10 @@ def update_member(member: discord.member, server: Server):
         logger.info(f"{new_member.ref} added as member to {server.id}")
     # Update nickname
     nickname = session.query(Related).filter_by(member_id=member.id, server_id=server.id).first()
-    if member.nick is not None:
-        set_nick = member.nick
-    else:
-        set_nick = member.display_name
     if nickname is not None:
-        nickname.nick = set_nick
+        nickname.nick = member.display_name
     else:
-        nickname = Related(server_id=server.id, member_id=member.id, nick=set_nick)
+        nickname = Related(server_id=server.id, member_id=member.id, nick=member.display_name)
         session.add(nickname)
     session.commit()
 
