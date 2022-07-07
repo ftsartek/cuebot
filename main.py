@@ -389,12 +389,12 @@ async def full_queue_info(ctx: commands.Context) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     author = session.query(Member).filter_by(id=ctx.author.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
-    printout = f"```User queue records:\n\n"
+    printout = f"```User queue records:\n\n{'Name':25} {'Queue Count':15} {'Total Queue Time'}\n\n"
     if validate_user(author, server) and ctx.message.channel.id == server.admin_channel:
         for item in related:
             if item.queue_count > 0:
                 queue_total = convert_seconds(item.queue_time)
-                printout = printout + f"{item.nick:25} {str(item.queue_count) + ' time(s) queued':18} " \
+                printout = printout + f"{item.nick:25} {item.queue_count:15} " \
                                       f"{queue_total[0]}d {queue_total[1]}h {queue_total[2]}m {queue_total[3]}s\n"
                 if len(printout) > 1500:
                     printout = printout + "```"
