@@ -22,19 +22,19 @@ class UpdateCog(commands.Cog):
         logger.info("Bot loop cog started.")
 
     # cog loader
-    def cog_unload(self):
+    def cog_unload(self) -> None:
         self.updater.cancel()
 
     # loop method
     @tasks.loop(seconds=cfg.get_refresh_timer())
-    async def updater(self):
+    async def updater(self) -> None:
         for server in session.query(Server).all():
             if validate_server(server):
                 await check_voicechannel(server)
 
 
 # Returns if a message is owned by the bot
-def own_messages(msg):
+def own_messages(msg: discord.Message) -> bool:
     return msg.author == bot.user
 
 
@@ -43,7 +43,7 @@ def check_time_difference(timestamp: datetime) -> timedelta:
     return datetime.now() - timestamp
 
 
-def calc_times(session: time):
+def calc_times(session: time) -> tuple:
     now = datetime.now()
     compiled = datetime(year=now.year, month=now.month, day=now.day,
                         hour=session.hour, minute=session.minute, second=0)
@@ -56,11 +56,11 @@ def calc_times(session: time):
     return compiled_next, compiled_prev
 
 
-def calc_next_time_diff(session: datetime):
+def calc_next_time_diff(session: datetime) -> timedelta:
     return session - datetime.now()
 
 
-def check_time_between(earliest: time, latest: time):
+def check_time_between(earliest: time, latest: time) -> bool:
     current_datetime = datetime.now()
     current_time = time(hour=current_datetime.hour, minute=current_datetime.minute)
     if earliest > latest:
@@ -107,12 +107,13 @@ def queue_active_status() -> tuple:
 
 
 # Validates that a server is configured
-def validate_server(server: Server):
-    return server.id not in (-1, None) and server.text_channel not in (-1, None) and server.voice_channel not in (-1, None)
+def validate_server(server: Server) -> bool:
+    return server.id not in (-1, None) and server.text_channel not in (-1, None) and server.voice_channel not in (
+    -1, None)
 
 
 # Validates that a user is allowed to configure a server
-def validate_user(user: Member, server: Server):
+def validate_user(user: Member, server: Server) -> bool:
     user = session.query(Member).filter_by(id=user.id).first()
     server = session.query(Server).filter_by(id=server.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
@@ -129,7 +130,7 @@ def validate_user(user: Member, server: Server):
 
 
 # Converts a timedelta of only seconds to hours, minutes and seconds
-def convert_seconds(delta: timedelta):
+def convert_seconds(delta: timedelta) -> tuple:
     mins, secs = divmod(delta.seconds, 60)
     hrs, mins = divmod(mins, 60)
     days, hrs = divmod(hrs, 24)
@@ -137,7 +138,7 @@ def convert_seconds(delta: timedelta):
 
 
 # Compiles the queue printout
-def compile_queue(sid: int, start_message: str, active: bool):
+def compile_queue(sid: int, start_message: str, active: bool) -> str:
     queued = session.query(Queue).filter_by(server_id=sid).all()
     if active:
         if len(queued) == 0:
@@ -164,7 +165,7 @@ def compile_queue(sid: int, start_message: str, active: bool):
 
 
 # Stringifies a queue item
-def stringify_queue(queue_item: Queue, timeout: bool):
+def stringify_queue(queue_item: Queue, timeout: bool) -> str:
     nickname = session.query(Related).filter_by(member_id=queue_item.member_id,
                                                 server_id=queue_item.server_id).first().nick
     if timeout:
@@ -179,7 +180,7 @@ def stringify_queue(queue_item: Queue, timeout: bool):
 
 
 # Adds a queue item, or resets it if it was timing out
-def add_queue(member: Member, server_id):
+def add_queue(member: Member, server_id) -> None:
     if isinstance(member, int):
         queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
         member = session.query(Member).filter_by(id=member).first()
@@ -199,7 +200,7 @@ def add_queue(member: Member, server_id):
 
 
 # Removes a queue item
-def remove_queue(member: Member, server_id, timeout=True):
+def remove_queue(member: Member, server_id: int, timeout: bool = True) -> None:
     if isinstance(member, int):
         queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
         member = session.query(Member).filter_by(id=member).first()
@@ -252,7 +253,7 @@ def remove_queue(member: Member, server_id, timeout=True):
 
 
 # Updates a member and their nickname for a certain server
-def update_member(member: discord.member, server: Server):
+def update_member(member: discord.member, server: Server) -> None:
     guild = bot.get_guild(server.id)
     member = guild.get_member(member.id)
     if session.query(Member).filter_by(id=member.id).first() is None:
@@ -271,7 +272,7 @@ def update_member(member: discord.member, server: Server):
 
 
 # Updates the queue message
-async def update_message(server_id, queue_channel, message):
+async def update_message(server_id: int, queue_channel: discord.TextChannel, message: tuple) -> None:
     channel_history = await queue_channel.history(limit=50).flatten()
     if len(channel_history) > 0:
         last_msg = channel_history[0]
@@ -284,7 +285,7 @@ async def update_message(server_id, queue_channel, message):
         await queue_channel.send(compile_queue(server_id, message[1], message[0]))
 
 
-async def check_voicechannel(server):
+async def check_voicechannel(server: Server) -> None:
     if validate_server(server):
         queue_channel = bot.get_channel(server.text_channel)
         voice_queue = bot.get_channel(server.voice_channel)
@@ -313,7 +314,7 @@ async def check_voicechannel(server):
 
 # Command to initialise a server
 @bot.command()
-async def init_server(ctx):
+async def init_server(ctx: commands.Context) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     if server is None:
         server = Server(id=ctx.guild.id)
@@ -326,15 +327,16 @@ async def init_server(ctx):
 
 
 @bot.command()
-async def set_channel(ctx, group: str, chid: int):
-    if validate_user(session.query(Member).filter_by(id=ctx.author.id).first(), session.query(Server).filter_by(id=ctx.guild.id).first()):
+async def set_channel(ctx: commands.Context, group: str, chid: int) -> None:
+    if validate_user(session.query(Member).filter_by(id=ctx.author.id).first(),
+                     session.query(Server).filter_by(id=ctx.guild.id).first()):
         if group not in ("queue", "output", "bot", "admin"):
             await ctx.send(f"Incorrect channel type")
         else:
             await config_channel(ctx, group, chid)
 
 
-async def config_channel(ctx, group: str, chid: int):
+async def config_channel(ctx: commands.Context, group: str, chid: int) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     if server is None:
         await ctx.send(f"This server has not yet been initialised.")
@@ -365,7 +367,7 @@ async def config_channel(ctx, group: str, chid: int):
 
 
 @bot.command()
-async def queue_info(ctx, name=None):
+async def queue_info(ctx: commands.Context, name=None) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     if name is not None:
         member = session.query(Member).filter_by(id=name[2:-1]).first()
@@ -383,7 +385,7 @@ async def queue_info(ctx, name=None):
 
 
 @bot.command()
-async def full_queue_info(ctx):
+async def full_queue_info(ctx: commands.Context) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     author = session.query(Member).filter_by(id=ctx.author.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
@@ -402,7 +404,7 @@ async def full_queue_info(ctx):
 
 
 @bot.command()
-async def reset_queue_info(ctx):
+async def reset_queue_info(ctx: commands.Context) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     author = session.query(Member).filter_by(id=ctx.author.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
@@ -416,7 +418,7 @@ async def reset_queue_info(ctx):
 
 
 @bot.command()
-async def add_admin(ctx, name=None):
+async def add_admin(ctx: commands.Context, name=None) -> None:
     if name is not None:
         if validate_user(ctx.author, ctx.guild):
             relation = session.query(Related).filter_by(member_id=name[2:-1], server_id=ctx.guild.id)
@@ -428,7 +430,7 @@ async def add_admin(ctx, name=None):
 
 
 @bot.command()
-async def set_timeout_wait(ctx, duration=None):
+async def set_timeout_wait(ctx: commands.Context, duration=None) -> None:
     if duration is not None:
         try:
             if validate_user(ctx.author, ctx.guild):
@@ -443,7 +445,7 @@ async def set_timeout_wait(ctx, duration=None):
 
 
 @bot.command()
-async def set_timeout_duration(ctx, duration=None):
+async def set_timeout_duration(ctx: commands.Context, duration=None) -> None:
     if duration is not None:
         try:
             if validate_user(ctx.author, ctx.guild):
@@ -459,7 +461,7 @@ async def set_timeout_duration(ctx, duration=None):
 
 # Event on startup, indicating the bot is ready
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
     session.commit()
     for server in session.query(Server).all():
         await check_voicechannel(server)
@@ -469,7 +471,7 @@ async def on_ready():
 
 # Event on a voice state change, indicating a user has joined or left a channel
 @bot.event
-async def on_voice_state_update(member, before, after):
+async def on_voice_state_update(member: discord.Member, before, after) -> None:
     server_id = before.channel.guild.id if before.channel is not None else after.channel.guild.id
     server = session.query(Server).filter_by(id=server_id).first()
     if server is not None:
