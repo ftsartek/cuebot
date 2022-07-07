@@ -277,7 +277,6 @@ async def check_voicechannel(server):
         voice_queue = bot.get_channel(server.voice_channel)
         members = [key for key in voice_queue.voice_states]
         message = queue_active_status()
-        logger.info(message)
         for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
             # Members who were previously in queue and still are
             if queued_user.member_id in members:
