@@ -124,13 +124,13 @@ def convert_seconds(delta: timedelta):
 
 
 # Compiles the queue printout
-def compile_queue(sid: int, message: str, active: bool):
+def compile_queue(sid: int, start_message: str, active: bool):
     queued = session.query(Queue).filter_by(server_id=sid).all()
     if active:
         if len(queued) == 0:
-            message = message + f"Queue is currently empty.\n\n"
+            message = start_message + f"Queue is currently empty.\n\n"
         else:
-            message = message + f"Current queue:\n\n"
+            message = start_message + f"Current queue:\n\n"
             iterator = 0
             timeout_list = []
             for item in queued:
@@ -140,14 +140,14 @@ def compile_queue(sid: int, message: str, active: bool):
                 else:
                     timeout_list.append(stringify_queue(item, timeout=True))
             if iterator == 0:
-                message = message + f"Queue is currently empty.\n\n"
+                message = start_message + f"Queue is currently empty.\n\n"
             if len(timeout_list) > 0:
                 message = message + "\n\nUsers on queue timeout:\n\n"
                 for string in timeout_list:
                     message = message + string
         return message + "```"
     else:
-        return message + "```"
+        return start_message + "```"
 
 
 # Stringifies a queue item
