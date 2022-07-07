@@ -243,13 +243,12 @@ def update_member(member: discord.member, server: Server):
 
 
 # Updates the queue message
-async def update_message(server_id, queue_channel):
+async def update_message(server_id, queue_channel, message):
     channel_history = await queue_channel.history(limit=50).flatten()
     if len(channel_history) > 0:
         last_msg = channel_history[0]
     else:
         last_msg = None
-    message = queue_active_status()
     if own_messages(last_msg):
         await last_msg.edit(content=compile_queue(server_id, message[1], message[0]))
     else:
@@ -262,11 +261,14 @@ async def check_voicechannel(server):
         queue_channel = bot.get_channel(server.text_channel)
         voice_queue = bot.get_channel(server.voice_channel)
         members = [key for key in voice_queue.voice_states]
+        message = queue_active_status()
+        logger.info(message)
         for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
             # Members who were previously in queue and still are
             if queued_user.member_id in members:
                 update_member(bot.get_user(queued_user.member_id), server)
-                add_queue(queued_user.member_id, server.id)
+                if message[0]:
+                    add_queue(queued_user.member_id, server.id)
                 members.remove(queued_user.member_id)
             # Members who were in queue but now are not
             elif queued_user.member_id not in members:
@@ -274,8 +276,9 @@ async def check_voicechannel(server):
         # Members who were not previously in queue but have joined
         for member in members:
             update_member(bot.get_user(member), server)
-            add_queue(member, server.id)
-        await update_message(server.id, queue_channel)
+            if message[0]:
+                add_queue(member, server.id)
+        await update_message(server.id, queue_channel, message)
 
 
 # Command to initialise a server
