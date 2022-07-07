@@ -63,7 +63,6 @@ def queue_active_status() -> tuple:
     eu_end = calc_next_time(cfg.get_sre_eu_end())
     current_time = datetime.now()
     queue_window = timedelta(minutes=30)
-    logger.info(us_start, us_end, eu_start, eu_end, current_time)
     # Pre-queue time for US SRE
     if (us_start - queue_window) < current_time < us_start:
         diff = convert_seconds(calc_next_time_diff(us_start))
