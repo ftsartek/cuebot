@@ -87,10 +87,10 @@ def queue_active_status() -> tuple:
         diff = convert_seconds(calc_next_time_diff(calc_times(eu_end)[0]))
         return True, f"```EUTZ SRE is open now. Session ends in {diff[1]}h {diff[2]}m\n\n"
     # Inactive times
-    if us_end < current_time < (eu_start - queue_window):
+    if us_end < current_time < eu_window_start:
         diff = convert_seconds(calc_next_time_diff(calc_times(eu_window_start)[0]))
         return False, f"```Queue is currently closed. EUTZ Pre-queue opens in {diff[1]}h {diff[2]}m\n\n"
-    if eu_end < current_time < (us_start - queue_window):
+    if eu_end < current_time < us_window_start:
         diff = convert_seconds(calc_next_time_diff(calc_times(us_window_start)[0]))
         return False, f"```Queue is currently closed. USTZ Pre-queue opens in {diff[1]}h {diff[2]}m\n\n"
     return False, f"```Queue is currently closed.\n\n"
