@@ -393,7 +393,7 @@ async def full_queue_info(ctx: commands.Context) -> None:
     if validate_user(author, server) and ctx.message.channel.id == server.admin_channel:
         for item in related:
             queue_total = convert_seconds(item.queue_time)
-            printout = printout + f"{item.nick}: {item.queue_count} times queued, " \
+            printout = printout + f"{item.nick + ':':25} {item.queue_count + ' times queued':18} " \
                                   f"{queue_total[0]}d {queue_total[1]}h {queue_total[2]}m {queue_total[3]}s\n"
             if len(printout) > 1500:
                 printout = printout + "```"
