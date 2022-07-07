@@ -43,13 +43,17 @@ def check_time_difference(timestamp: datetime) -> timedelta:
     return datetime.now() - timestamp
 
 
-def calc_next_time(session: time):
+def calc_times(session: time):
     now = datetime.now()
     compiled = datetime(year=now.year, month=now.month, day=now.day,
                         hour=session.hour, minute=session.minute, second=0)
     if compiled <= now:
-        compiled = compiled + timedelta(days=1)
-    return compiled
+        compiled_next = compiled + timedelta(days=1)
+        compiled_prev = compiled
+    else:
+        compiled_next = compiled
+        compiled_prev = compiled - timedelta(days=1)
+    return compiled_next, compiled_prev
 
 
 def calc_next_time_diff(session: datetime):
@@ -57,34 +61,34 @@ def calc_next_time_diff(session: datetime):
 
 
 def queue_active_status() -> tuple:
-    us_start = calc_next_time(cfg.get_sre_us_start())
-    us_end = calc_next_time(cfg.get_sre_us_end())
-    eu_start = calc_next_time(cfg.get_sre_eu_start())
-    eu_end = calc_next_time(cfg.get_sre_eu_end())
+    us_start_next, us_start_prev = calc_next_time(cfg.get_sre_us_start())
+    us_end_next, us_end_prev = calc_next_time(cfg.get_sre_us_end())
+    eu_start_next, eu_start_prev = calc_next_time(cfg.get_sre_eu_start())
+    eu_end_next, eu_end_prev = calc_next_time(cfg.get_sre_eu_end())
     current_time = datetime.now()
     queue_window = timedelta(minutes=30)
     # Pre-queue time for US SRE
-    if (us_start - queue_window) < current_time < us_start:
-        diff = convert_seconds(calc_next_time_diff(us_start))
+    if (us_start_next - queue_window) < current_time < us_start_next:
+        diff = convert_seconds(calc_next_time_diff(us_start_next))
         return True, f"```Pre-queue is open for USTZ SRE. Session starts in {diff[1]}h {diff[2]}m\n\n"
     # Active time for US SRE
-    if us_start < current_time < us_end:
-        diff = convert_seconds(calc_next_time_diff(us_end))
+    if us_start_prev < current_time < us_end_next:
+        diff = convert_seconds(calc_next_time_diff(us_end_next))
         return True, f"```USTZ SRE is active now. Session ends in {diff[1]}h {diff[2]}m\n\n"
     # Pre-queue time for EU SRE
-    if (eu_start - queue_window) < current_time < eu_start:
-        diff = convert_seconds(calc_next_time_diff(eu_start))
+    if (eu_start_next - queue_window) < current_time < eu_start_next:
+        diff = convert_seconds(calc_next_time_diff(eu_start_next))
         return True, f"```Pre-queue is active for EUTZ SRE. Session starts in {diff[1]}h {diff[2]}m\n\n"
     # Active time for EU SRE
-    if eu_start < current_time < eu_end:
-        diff = convert_seconds(calc_next_time_diff(eu_end))
+    if eu_start_prev < current_time < eu_end_next:
+        diff = convert_seconds(calc_next_time_diff(eu_end_next))
         return True, f"```EUTZ SRE is open now. Session ends in {diff[1]}h {diff[2]}m\n\n"
     # Inactive times
-    if us_end < current_time < (eu_start - queue_window):
-        diff = convert_seconds(calc_next_time_diff(eu_start - queue_window))
+    if us_end_prev < current_time < (eu_start_next - queue_window):
+        diff = convert_seconds(calc_next_time_diff(eu_start_next - queue_window))
         return False, f"```Queue is currently closed. EUTZ Pre-queue opens in {diff[1]}h {diff[2]}m\n\n"
-    if eu_end < current_time < (us_start - queue_window):
-        diff = convert_seconds(calc_next_time_diff(eu_start - queue_window))
+    if eu_end_prev < current_time < (us_start_next - queue_window):
+        diff = convert_seconds(calc_next_time_diff(us_start_next - queue_window))
         return False, f"```Queue is currently closed. USTZ Pre-queue opens in {diff[1]}h {diff[2]}m\n\n"
     return False, f"```Queue is currently closed.\n\n"
 
