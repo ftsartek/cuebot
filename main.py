@@ -61,10 +61,10 @@ def calc_next_time_diff(session: datetime):
 
 
 def queue_active_status() -> tuple:
-    us_start_next, us_start_prev = calc_next_time(cfg.get_sre_us_start())
-    us_end_next, us_end_prev = calc_next_time(cfg.get_sre_us_end())
-    eu_start_next, eu_start_prev = calc_next_time(cfg.get_sre_eu_start())
-    eu_end_next, eu_end_prev = calc_next_time(cfg.get_sre_eu_end())
+    us_start_next, us_start_prev = calc_times(cfg.get_sre_us_start())
+    us_end_next, us_end_prev = calc_times(cfg.get_sre_us_end())
+    eu_start_next, eu_start_prev = calc_times(cfg.get_sre_eu_start())
+    eu_end_next, eu_end_prev = calc_times(cfg.get_sre_eu_end())
     current_time = datetime.now()
     queue_window = timedelta(minutes=30)
     # Pre-queue time for US SRE
