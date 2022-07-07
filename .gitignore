@@ -2,3 +2,4 @@
 venv/
 cuebot.log
 config.json
+*.db
