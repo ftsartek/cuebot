@@ -126,28 +126,28 @@ def convert_seconds(delta: timedelta):
 # Compiles the queue printout
 def compile_queue(sid: int, message: str, active: bool):
     queued = session.query(Queue).filter_by(server_id=sid).all()
-    # if active:
-    if len(queued) == 0:
-        message = message + f"Queue is currently empty.\n\n"
+    if active:
+        if len(queued) == 0:
+            message = message + f"Queue is currently empty.\n\n"
+        else:
+            message = message + f"Current queue:\n\n"
+            iterator = 0
+            timeout_list = []
+            for item in queued:
+                if item.timeout_start is None:
+                    iterator += 1
+                    message = message + f"    {str(iterator) + ')':<5}" + stringify_queue(item, timeout=False)
+                else:
+                    timeout_list.append(stringify_queue(item, timeout=True))
+            if iterator == 0:
+                message = f"```Queue is currently empty."
+            if len(timeout_list) > 0:
+                message = message + "\n\nUsers on queue timeout:\n\n"
+                for string in timeout_list:
+                    message = message + string
+        return message + "```"
     else:
-        message = message + f"Current queue:\n\n"
-        iterator = 0
-        timeout_list = []
-        for item in queued:
-            if item.timeout_start is None:
-                iterator += 1
-                message = message + f"    {str(iterator) + ')':<5}" + stringify_queue(item, timeout=False)
-            else:
-                timeout_list.append(stringify_queue(item, timeout=True))
-        if iterator == 0:
-            message = f"```Queue is currently empty."
-        if len(timeout_list) > 0:
-            message = message + "\n\nUsers on queue timeout:\n\n"
-            for string in timeout_list:
-                message = message + string
-    return message + "```"
-    # else:
-    #     return message + "```"
+        return message + "```"
 
 
 # Stringifies a queue item
@@ -237,10 +237,14 @@ def update_member(member: discord.member, server: Server):
         logger.info(f"{new_member.ref} added as member to {server.id}")
     # Update nickname
     nickname = session.query(Related).filter_by(member_id=member.id, server_id=server.id).first()
-    if nickname is not None:
-        nickname.nick = member.display_name
+    if member.nick is not None:
+        set_nick = member.nick
     else:
-        nickname = Related(server_id=server.id, member_id=member.id, nick=member.display_name)
+        set_nick = member.display_name
+    if nickname is not None:
+        nickname.nick = set_nick
+    else:
+        nickname = Related(server_id=server.id, member_id=member.id, nick=set_nick)
         session.add(nickname)
     session.commit()
 
