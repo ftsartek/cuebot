@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import time
 
 logger = logging.getLogger('cuebot')
 logger.setLevel(logging.INFO)
@@ -126,13 +127,13 @@ class Config:
         return self.superuser_ref
 
     def get_sre_us_start(self):
-        return self.sre_us_start
+        return time(hour=self.sre_us_start.get("utc_hour"), minute=self.sre_us_start.get("utc_minute"))
 
     def get_sre_us_end(self):
-        return self.sre_us_end
+        return time(hour=self.sre_us_end.get("utc_hour"), minute=self.sre_us_end.get("utc_minute"))
 
     def get_sre_eu_start(self):
-        return self.sre_eu_start
+        return time(hour=self.sre_eu_start.get("utc_hour"), minute=self.sre_eu_start.get("utc_minute"))
 
     def get_sre_eu_end(self):
-        return self.sre_eu_end
+        return time(hour=self.sre_eu_end.get("utc_hour"), minute=self.sre_eu_end.get("utc_minute"))
