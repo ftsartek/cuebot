@@ -140,7 +140,7 @@ def compile_queue(sid: int, message: str, active: bool):
                 else:
                     timeout_list.append(stringify_queue(item, timeout=True))
             if iterator == 0:
-                message = f"```Queue is currently empty."
+                message = message + f"Queue is currently empty.\n\n"
             if len(timeout_list) > 0:
                 message = message + "\n\nUsers on queue timeout:\n\n"
                 for string in timeout_list:
