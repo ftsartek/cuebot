@@ -316,8 +316,8 @@ async def check_voicechannel(server: Server) -> None:
                     remove_queue(queued_user.member_id, server.id)
             # Members who were not previously in queue but have joined
             for member in members:
-                update_member(member.id, server)
-                add_queue(member.id, server.id)
+                update_member(member, server)
+                add_queue(member, server.id)
         else:
             for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
                 remove_queue(queued_user.member_id, server.id, timeout=False)
