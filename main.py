@@ -33,6 +33,17 @@ class UpdateCog(commands.Cog):
                 await check_voicechannel(server)
 
 
+def check_member_type(member):
+    if isinstance(member, int):
+        return session.query(Member).filter_by(id=member).first()
+    elif isinstance(member, discord.Member):
+        return session.query(Member).filter_by(id=member.id).first()
+    elif isinstance(member, Member):
+        return member
+    else:
+        raise TypeError
+
+
 # Returns if a message is owned by the bot
 def own_messages(msg: discord.Message) -> bool:
     return msg.author == bot.user
@@ -113,7 +124,7 @@ def validate_server(server: Server) -> bool:
 
 
 # Validates that a user is allowed to configure a server
-def validate_user(user: Member, server: Server) -> bool:
+def validate_user(user: check_member_type, server: Server) -> bool:
     user = session.query(Member).filter_by(id=user.id).first()
     server = session.query(Server).filter_by(id=server.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
@@ -180,13 +191,8 @@ def stringify_queue(queue_item: Queue, timeout: bool) -> str:
 
 
 # Adds a queue item, or resets it if it was timing out
-def add_queue(member: Member, server_id) -> None:
-    if isinstance(member, int):
-        queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
-        member = session.query(Member).filter_by(id=member).first()
-    else:
-        queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
-        member = session.query(Member).filter_by(id=member.id).first()
+def add_queue(member: check_member_type, server_id) -> None:
+    queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
     if queue is not None:
         if queue.timeout_start is not None:
             queue.timeout_start = None
@@ -200,13 +206,8 @@ def add_queue(member: Member, server_id) -> None:
 
 
 # Removes a queue item
-def remove_queue(member: Member, server_id: int, timeout: bool = True) -> None:
-    if isinstance(member, int):
-        queue = session.query(Queue).filter_by(member_id=member, server_id=server_id).first()
-        member = session.query(Member).filter_by(id=member).first()
-    else:
-        queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
-        member = session.query(Member).filter_by(id=member.id).first()
+def remove_queue(member: check_member_type, server_id: int, timeout: bool = True) -> None:
+    queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
     server = session.query(Server).filter_by(id=server_id).first()
     # If the user is already on timeout
     if queue.timeout_start is not None:
@@ -253,7 +254,7 @@ def remove_queue(member: Member, server_id: int, timeout: bool = True) -> None:
 
 
 # Updates a member and their nickname for a certain server
-def update_member(member: discord.member, server: Server) -> None:
+def update_member(member: check_member_type, server: Server) -> None:
     guild = bot.get_guild(server.id)
     member = guild.get_member(member.id)
     if session.query(Member).filter_by(id=member.id).first() is None:
@@ -472,7 +473,7 @@ async def on_ready() -> None:
 
 # Event on a voice state change, indicating a user has joined or left a channel
 @bot.event
-async def on_voice_state_update(member: discord.Member, before, after) -> None:
+async def on_voice_state_update(member: check_member_type, before, after) -> None:
     server_id = before.channel.guild.id if before.channel is not None else after.channel.guild.id
     server = session.query(Server).filter_by(id=server_id).first()
     if server is not None:
