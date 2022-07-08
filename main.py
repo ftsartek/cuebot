@@ -175,7 +175,7 @@ def compile_queue(sid: int, start_message: str, active: bool) -> str:
             if iterator == 0:
                 message = start_message + f"Queue is currently empty.\n\n"
             if len(timeout_list) > 0:
-                message = message + "Users on queue timeout:\n\n"
+                message = message + "\n\nUsers on queue timeout:\n\n"
                 for string in timeout_list:
                     message = message + string
         return message + "```"
