@@ -33,7 +33,7 @@ class UpdateCog(commands.Cog):
                 await check_voicechannel(server)
 
 
-def check_member_type(member):
+def check_member_type(member: (int, Member, discord.Member)):
     if isinstance(member, int):
         return session.query(Member).filter_by(id=member).first()
     elif isinstance(member, discord.Member):
@@ -124,7 +124,7 @@ def validate_server(server: Server) -> bool:
 
 
 # Validates that a user is allowed to configure a server
-def validate_user(user: check_member_type, server: Server) -> bool:
+def validate_user(user: Member, server: Server) -> bool:
     user = session.query(Member).filter_by(id=user.id).first()
     server = session.query(Server).filter_by(id=server.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
@@ -191,7 +191,7 @@ def stringify_queue(queue_item: Queue, timeout: bool) -> str:
 
 
 # Adds a queue item, or resets it if it was timing out
-def add_queue(member: check_member_type, server_id) -> None:
+def add_queue(member: Member, server_id) -> None:
     queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
     if queue is not None:
         if queue.timeout_start is not None:
@@ -206,7 +206,7 @@ def add_queue(member: check_member_type, server_id) -> None:
 
 
 # Removes a queue item
-def remove_queue(member: check_member_type, server_id: int, timeout: bool = True) -> None:
+def remove_queue(member: Member, server_id: int, timeout: bool = True) -> None:
     queue = session.query(Queue).filter_by(member_id=member.id, server_id=server_id).first()
     server = session.query(Server).filter_by(id=server_id).first()
     # If the user is already on timeout
@@ -254,7 +254,7 @@ def remove_queue(member: check_member_type, server_id: int, timeout: bool = True
 
 
 # Updates a member and their nickname for a certain server
-def update_member(member: check_member_type, server: Server) -> None:
+def update_member(member: Member, server: Server) -> None:
     guild = bot.get_guild(server.id)
     member = guild.get_member(member.id)
     if session.query(Member).filter_by(id=member.id).first() is None:
@@ -297,19 +297,19 @@ async def check_voicechannel(server: Server) -> None:
             for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
                 # Members who were previously in queue and still are
                 if queued_user.member_id in members:
-                    update_member(bot.get_user(queued_user.member_id), server)
-                    add_queue(queued_user.member_id, server.id)
+                    update_member(check_member_type(queued_user.member_id), server)
+                    add_queue(check_member_type(queued_user.member_id), server.id)
                     members.remove(queued_user.member_id)
                 # Members who were in queue but now are not
                 elif queued_user.member_id not in members:
-                    remove_queue(queued_user.member_id, server.id)
+                    remove_queue(check_member_type(queued_user.member_id), server.id)
             # Members who were not previously in queue but have joined
             for member in members:
-                update_member(bot.get_user(member), server)
-                add_queue(member, server.id)
+                update_member(check_member_type(member), server)
+                add_queue(check_member_type(member), server.id)
         else:
             for queued_user in session.query(Queue).filter_by(server_id=server.id).all():
-                remove_queue(queued_user.member_id, server.id, timeout=False)
+                remove_queue(check_member_type(queued_user.member_id), server.id, timeout=False)
         await update_message(server.id, queue_channel, message)
 
 
@@ -329,7 +329,7 @@ async def init_server(ctx: commands.Context) -> None:
 
 @bot.command()
 async def set_channel(ctx: commands.Context, group: str, chid: int) -> None:
-    if validate_user(session.query(Member).filter_by(id=ctx.author.id).first(),
+    if validate_user(check_member_type(ctx.author.id),
                      session.query(Server).filter_by(id=ctx.guild.id).first()):
         if group not in ("queue", "output", "bot", "admin"):
             await ctx.send(f"Incorrect channel type")
@@ -391,7 +391,7 @@ async def full_queue_info(ctx: commands.Context) -> None:
     author = session.query(Member).filter_by(id=ctx.author.id).first()
     related = session.query(Related).filter_by(server_id=server.id).order_by(Related.queue_time).all()
     printout = f"```User queue records:\n\n{'Name':25} {'Queue Count':15} {'Total Queue Time'}\n\n"
-    if validate_user(author, server) and ctx.message.channel.id == server.admin_channel:
+    if validate_user(check_member_type(author), server) and ctx.message.channel.id == server.admin_channel:
         for item in related:
             if item.queue_count > 0:
                 queue_total = convert_seconds(item.queue_time)
@@ -410,7 +410,7 @@ async def reset_queue_info(ctx: commands.Context) -> None:
     server = session.query(Server).filter_by(id=ctx.guild.id).first()
     author = session.query(Member).filter_by(id=ctx.author.id).first()
     related = session.query(Related).filter_by(server_id=server.id).all()
-    if validate_user(author, server) and ctx.message.channel.id == server.admin_channel:
+    if validate_user(check_member_type(author), server) and ctx.message.channel.id == server.admin_channel:
         for item in related:
             item.queue_count = 0
             item.queue_time = timedelta(seconds=0)
@@ -422,7 +422,7 @@ async def reset_queue_info(ctx: commands.Context) -> None:
 @bot.command()
 async def add_admin(ctx: commands.Context, name=None) -> None:
     if name is not None:
-        if validate_user(ctx.author, ctx.guild):
+        if validate_user(check_member_type(ctx.author), ctx.guild):
             relation = session.query(Related).filter_by(member_id=name[2:-1], server_id=ctx.guild.id)
             if relation is not None:
                 relation.admin = True
@@ -435,7 +435,7 @@ async def add_admin(ctx: commands.Context, name=None) -> None:
 async def set_timeout_wait(ctx: commands.Context, duration=None) -> None:
     if duration is not None:
         try:
-            if validate_user(ctx.author, ctx.guild):
+            if validate_user(check_member_type(ctx.author), ctx.guild):
                 server = session.query(Server).filter_by(id=ctx.guild.id).first()
                 if server is not None:
                     server.timeout_wait = int(duration)
@@ -450,7 +450,7 @@ async def set_timeout_wait(ctx: commands.Context, duration=None) -> None:
 async def set_timeout_duration(ctx: commands.Context, duration=None) -> None:
     if duration is not None:
         try:
-            if validate_user(ctx.author, ctx.guild):
+            if validate_user(check_member_type(ctx.author), ctx.guild):
                 server = session.query(Server).filter_by(id=ctx.guild.id).first()
                 if server is not None:
                     server.timeout_duration = int(duration)
@@ -473,7 +473,7 @@ async def on_ready() -> None:
 
 # Event on a voice state change, indicating a user has joined or left a channel
 @bot.event
-async def on_voice_state_update(member: check_member_type, before, after) -> None:
+async def on_voice_state_update(member: Member, before, after) -> None:
     server_id = before.channel.guild.id if before.channel is not None else after.channel.guild.id
     server = session.query(Server).filter_by(id=server_id).first()
     if server is not None:
