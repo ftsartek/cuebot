@@ -39,17 +39,20 @@ class UpdateCog(commands.Cog):
 
 
 def __check_member_type(member: (int, Member, discord.Member)):
-    if member is not None:
-        if isinstance(member, int):
-            return session.query(Member).filter_by(id=member).first()
-        elif isinstance(member, discord.Member):
-            return session.query(Member).filter_by(id=member.id).first()
-        elif isinstance(member, Member):
-            return member
-        else:
-            raise TypeError
-    else:
+    if member is None:
         raise TypeError
+    else:
+        check_member = None
+        if isinstance(member, int):
+            check_member = session.query(Member).filter_by(id=member).first()
+        elif isinstance(member, discord.Member):
+            check_member = session.query(Member).filter_by(id=member.id).first()
+        elif isinstance(member, Member):
+            check_member = member
+        if check_member is None:
+            return member.id
+        else:
+            return check_member
 
 
 # Returns if a message is owned by the bot
