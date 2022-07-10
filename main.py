@@ -102,27 +102,27 @@ def queue_active_status() -> tuple:
     # Pre-queue time for US SRE
     if check_time_between(us_window_start, us_start):
         diff = convert_seconds(calc_next_time_diff(calc_times(us_start)[0]))
-        return True, f"```Pre-queue is open for USTZ SRE. Session starts in {diff[1]}h {diff[2] + 1}m\n\n"
+        return True, f"```Pre-session queue tracking is active for USTZ SRE. Session starts in {diff[1]}h {diff[2] + 1}m\n\n"
     # Active time for US SRE
     if check_time_between(us_start, us_end):
         diff = convert_seconds(calc_next_time_diff(calc_times(us_end)[0]))
-        return True, f"```USTZ SRE is active now. Session ends in {diff[1]}h {diff[2] + 1}m\n\n"
+        return True, f"```Queue tracking for USTZ SRE is active now. Session ends in {diff[1]}h {diff[2] + 1}m\n\n"
     # Pre-queue time for EU SRE
     if check_time_between(eu_window_start, eu_start):
         diff = convert_seconds(calc_next_time_diff(calc_times(eu_start)[0]))
-        return True, f"```Pre-queue is active for EUTZ SRE. Session starts in {diff[1]}h {diff[2] + 1}m\n\n"
+        return True, f"```Pre-session queue tracking is active for EUTZ SRE. Session starts in {diff[1]}h {diff[2] + 1}m\n\n"
     # Active time for EU SRE
     if check_time_between(eu_start, eu_end):
         diff = convert_seconds(calc_next_time_diff(calc_times(eu_end)[0]))
-        return True, f"```EUTZ SRE is open now. Session ends in {diff[1]}h {diff[2] + 1}m\n\n"
+        return True, f"```Queue tracking for EUTZ SRE is active now. Session ends in {diff[1]}h {diff[2] + 1}m\n\n"
     # Inactive times
     if check_time_between(us_end, eu_window_start):
         diff = convert_seconds(calc_next_time_diff(calc_times(eu_window_start)[0]))
-        return False, f"```Queue is currently closed. EUTZ Pre-queue opens in {diff[1]}h {diff[2] + 1}m\n\n"
+        return False, f"```Queue tracking is currently inactive. EUTZ tracking activates in {diff[1]}h {diff[2] + 1}m\n\n"
     if check_time_between(eu_end, us_window_start):
         diff = convert_seconds(calc_next_time_diff(calc_times(us_window_start)[0]))
-        return False, f"```Queue is currently closed. USTZ Pre-queue opens in {diff[1]}h {diff[2] + 1}m\n\n"
-    return False, f"```Queue is currently closed.\n\n"
+        return False, f"```Queue tracking is currently inactive. USTZ tracking activates in {diff[1]}h {diff[2] + 1}m\n\n"
+    return False, f"```Queue is currently unavailable.\n\n"
 
 
 # Validates that a server is configured
