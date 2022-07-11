@@ -188,7 +188,7 @@ def stringify_queue(queue_item: Queue, timeout: bool) -> str:
     nickname = session.query(Related).filter_by(member_id=queue_item.member_id,
                                                 server_id=queue_item.server_id).first().nick
     if timeout:
-        calc_secs = (queue_item.timeout_start + timedelta(minutes=5)) - datetime.now()
+        calc_secs = (queue_item.timeout_start + timedelta(seconds=queue_item.server.timeout_duration)) - datetime.now()
         vals = convert_seconds(calc_secs)
         line = f"         {nickname:<25} {vals[2]}m {vals[3]}s remaining\n"
     else:
